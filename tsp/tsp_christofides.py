@@ -1,5 +1,5 @@
 import math
-import random
+import networkx as nx
 
 CIDADES = {
     "A": (0, 0),
@@ -15,64 +15,34 @@ CIDADES = {
 }
 
 nomes_cidades = list(CIDADES.keys())
-TENTATIVAS = 100
 
-random.seed(42)
+grafo = nx.Graph()
+grafo.add_nodes_from(nomes_cidades)
 
+for i in range(len(nomes_cidades)):
+    for j in range(i + 1, len(nomes_cidades)):
+        origem = nomes_cidades[i]
+        destino = nomes_cidades[j]
 
-def calcular_distancia(cidade_a, cidade_b):
-    return math.dist(CIDADES[cidade_a], CIDADES[cidade_b])
+        distancia = math.dist(CIDADES[origem], CIDADES[destino])
 
-
-def executar_vizinho_mais_proximo(cidade_inicial):
-    rota = [cidade_inicial]
-    visitadas = {cidade_inicial}
-    cidade_atual = cidade_inicial
-
-    while len(visitadas) < len(nomes_cidades):
-        cidades_disponiveis = [
-            cidade
-            for cidade in nomes_cidades
-            if cidade not in visitadas
-        ]
-
-        proxima_cidade = min(
-            cidades_disponiveis,
-            key=lambda cidade: calcular_distancia(
-                cidade_atual,
-                cidade
-            )
+        grafo.add_edge(
+            origem,
+            destino,
+            weight=distancia
         )
 
-        rota.append(proxima_cidade)
-        visitadas.add(proxima_cidade)
-        cidade_atual = proxima_cidade
+ciclo = nx.approximation.christofides(
+    grafo,
+    weight="weight"
+)
 
-    rota.append(cidade_inicial)
+distancia_total = 0
 
-    distancia_total = 0
+for i in range(len(ciclo) - 1):
+    origem = ciclo[i]
+    destino = ciclo[i + 1]
 
-    for i in range(len(rota) - 1):
-        distancia_total += calcular_distancia(
-            rota[i],
-            rota[i + 1]
-        )
+    distancia_total += grafo[origem][destino]["weight"]
 
-    return rota, distancia_total
-
-
-melhor_rota = None
-melhor_distancia = float("inf")
-
-for _ in range(TENTATIVAS):
-    cidade_inicial = random.choice(nomes_cidades)
-
-    rota, distancia_total = executar_vizinho_mais_proximo(
-        cidade_inicial
-    )
-
-    if distancia_total < melhor_distancia:
-        melhor_distancia = distancia_total
-        melhor_rota = rota
-
-print(f"{melhor_distancia:.2f}")
+print(f"{distancia_total:.2f}")
